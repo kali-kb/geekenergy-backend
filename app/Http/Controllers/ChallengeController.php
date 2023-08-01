@@ -16,6 +16,8 @@ class ChallengeController extends Controller
 
     public function challengeForm(Request $request){
         $challenge_form = json_decode($request->getContent());
+        $trimmedString = trim($challenge_form->example_output, " \t\n\r\0\x0B\"");
+        $resultString = str_replace('"', '', $trimmedString);
         try{
             DB::table("challenge")->insert([
                 "title" => $challenge_form->title,
@@ -24,7 +26,7 @@ class ChallengeController extends Controller
                 "tags" => json_encode(["tags_list" => $challenge_form->tags]),
                 "posted_by" => 1,
                 "example_input" => $challenge_form->example_input,
-                "example_output" => $challenge_form->example_output,
+                "example_output" => $resultString,
                 "slug" => Str::slug($challenge_form->title, "-")
 
             ]);

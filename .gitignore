@@ -17,3 +17,5 @@ yarn-error.log
 /.idea
 /.vscode
 README.md
+fly.toml
+.dockerignore

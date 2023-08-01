@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create("guide", function(Blueprint $table){
             $table->id();
             $table->string("title");
-            $table->string("content");
+            $table->text("content");
             $table->date("date_created")->default(date("D M j G:i:s T Y"));
         });
     }

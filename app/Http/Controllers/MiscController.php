@@ -18,23 +18,26 @@ class MiscController extends Controller
 {
     public function __construct(){
         $this->endpoint = env("CODE_PROCESSING_SERVER_ENDPOINT");
+        $this->api_key = env("API_KEY");
+        $this->lang_ids = ["javascript" => 93, "python3" => 71];
     }
 
 
     public function executor(Request $request){
+
         try{
 
             $data = json_decode($request->getContent());
+      
             $payload = [
-              "clientId" => $data->clientId,
-              "clientSecret" => $data->clientSecret,
-              "script" => $data->script,
-              "language" => $data->language,
-              "versionIndex" => $data->versionIndex
+                'source_code' => $data->script,
+                'language_id' => $this->lang_ids[$data->language]
             ];
-            $output = Http::post($this->endpoint, $payload);
+            $headers = ["X-RapidAPI-Key" => $this->api_key, "Content-Type" => "application/json"];
+
+            $output = Http::withHeaders($headers)->post($this->endpoint .'/submissions?wait=true', $payload);
             // error_log("" . $response->json());
-            error_log("" . $output);
+            error_log("output: " . $output);
             return $output;
         }
         catch(Exception $exception){
@@ -44,20 +47,24 @@ class MiscController extends Controller
     }
 
     public function runTest(Request $request){
-        $payload = json_decode($request->getContent());
-        $challenge = Challenge::where("challenge_id", $payload->challenge)->get()->first();
-        $user = User::where("user_id", $payload->user)->get()->first();
+        $data = json_decode($request->getContent());
+        $challenge = Challenge::where("challenge_id", $data->challenge)->get()->first();
+        $user = User::where("user_id", $data->user)->get()->first();
+        error_log('' . json_encode($data));
+        error_log('script: '. $data->script);
         $payload = [
-          "clientId" => $payload->clientId,
-          "clientSecret" => $payload->clientSecret,
-          "script" => $payload->script,
-          "language" => $payload->language,
-          "versionIndex" => $payload->versionIndex
+          "source_code" => $data->script,
+          "language_id" => $this->lang_ids[$data->language],
+          "expected_output" => $challenge->example_output
         ];
+        $headers = ["X-RapidAPI-Key" => $this->api_key, "Content-Type" => "application/json"];
         $point = ["Easy" => 25, "Medium" => 50 ,"Hard" => 100];
-        $response = json_decode(Http::post($this->endpoint, $payload));
-        error_log("output:" . $response->output);
-        if (Str::remove("\n", $response->output) == Str::remove(" ", $challenge->example_output)){
+
+        $response = Http::withHeaders($headers)->post($this->endpoint.'/submissions?wait=true', $payload);
+        $parsed = $response->json();
+        $output = str_replace(' ', '', $parsed['stdout']);
+        // error_log("output: " . str_replace(' ', '', $parsed['stdout']) . "expected_output: " . $challenge->example_output);
+        if (Str::remove("\n", str_replace(' ', '', $output)) == Str::remove(" ", $challenge->example_output)){
             error_log("correct");
             $won_point = $point[$challenge->difficulty];
             $user->points = $won_point;
@@ -71,13 +78,13 @@ class MiscController extends Controller
 
             Notification::create([
                 "user_id" => $user->user_id,
-                "notification_message" => "Congradulations " . $won_point . "points have been added to your profile"
+                "notification_message" => "Congradulations " . $won_point . " points have been added to your profile"
             ]);
-            return response()->json(["result" => "pass", "points_added" => $won_point, "code_output" => $response->output]);
+            return response()->json(["result" => "pass", "points_added" => $won_point, "code_output" => $output]);
         }
         else{
             error_log("incorrect");
-            return response()->json(["result" => "fail", "points_added" => 0, "code_output" => $response->output]);
+            return response()->json(["result" => "fail", "points_added" => 0, "code_output" => $output]);
         }
     }
 

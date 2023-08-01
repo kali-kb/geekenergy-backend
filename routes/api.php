@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::get('/home/{id}', function (Request $request, $id) {
+    error_log("id " . $id);
     return response()->json(["pageId" => $id]);
 });
 

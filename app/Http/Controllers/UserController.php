@@ -122,6 +122,7 @@ class UserController extends Controller
     }
 
     public function handleGoogleAuthCallback(Request $request){
+        error_log("this has executed");
         try{
             $user = Socialite::driver('google')->stateless()->user();
             $u = null;
@@ -148,6 +149,7 @@ class UserController extends Controller
     }
     // Slow and Dirty workaround
     public function handleGithubAuthCallback(Request $request){
+        error_log("Executing this");
         try{
             $user = Socialite::driver('github')->stateless()->user();
             $u = null;

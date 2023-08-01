@@ -40,7 +40,7 @@ return [
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
-        'redirect' => 'http://localhost:2101/auth/github',
+        'redirect' => env('GITHUB_REDIRECT_URL')
         // 'redirect' => 'http://example.com/callback-url',
     ],
 
